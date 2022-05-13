@@ -326,15 +326,25 @@ class AssemblyConverter:
 			raise WrongInstructionType()
 
 		opcode = 0;f3 = 1;f7 = 2
-		print("imm: ", hex(imm))
-		mod_imm = ((int(imm) - ((int(imm) >> 20) << 20)) >> 19) << 19 # imm[20]
-		print("mod_imm: ", hex(mod_imm))
-		mod_imm += (int(imm) - ((int(imm) >> 10) << 10)) >> 1 # imm[20|10:1]
-		print("mod_imm: ", hex(mod_imm))
-		mod_imm += (int(imm) - ((int(imm) >> 11) << 11)) >> 10 # imm[20|10:1|11]
-		print("mod_imm: ", hex(mod_imm))
-		mod_imm += (int(imm) - ((int(imm) >> 19) << 19)) >> 12 # imm[20|10:1|11|19:12]
-		print("mod_imm: ", hex(mod_imm))
+		# print("imm: ", hex(imm))
+		# mod_imm = ((int(imm) - ((int(imm) >> 20) << 20)) >> 19) << 19 # imm[20]
+		# print("mod_imm: ", hex(mod_imm))
+		# mod_imm += (int(imm) - ((int(imm) >> 10) << 10)) >> 1 # imm[20|10:1]
+		# print("mod_imm: ", hex(mod_imm))
+		# mod_imm += (int(imm) - ((int(imm) >> 11) << 11)) >> 10 # imm[20|10:1|11]
+		# print("mod_imm: ", hex(mod_imm))
+		# mod_imm += (int(imm) - ((int(imm) >> 19) << 19)) >> 12 # imm[20|10:1|11|19:12]
+		# print("mod_imm: ", hex(mod_imm))
+
+		mod_imm = (int(imm) >> 20 & 0x1) << 19
+		mod_imm += (int(imm) >> 1 & 0x3FF) << 9
+		mod_imm += (int(imm) >> 11 & 0x1) << 8
+		mod_imm += (int(imm) >> 12 & 0xFF) << 0
+		print("new mod_imm: ", hex(mod_imm))
+
+
+		# mod_imm = (int(imm) >> 20) << 20
+		# mod_imm += ((int(imm) - ((int(imm) >> 11) << 11)) >> 1) << 10
 		return  "".join([
 			#"".join([
 			#	self.__binary(int(imm),21)[::-1][20][::-1], self.__binary(int(imm),21)[::-1][1:11][::-1],
