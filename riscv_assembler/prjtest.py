@@ -3,12 +3,13 @@ from convert import *
 
 #pc = ProjectConverter('tests/assembly')
 
-pc = ProjectConverter(root = 'tests/assembly/prjtest1')
+pc = ProjectConverter(root = 'tests/assembly/straight')
 
 pc.setOutputType('r')
 pc.setHex(True)
 
 res = pc.convert()
+print(res)
 
 print("\n".join(["{}: {}".format(p, len(res[p])) for p in res.keys()]))
 print(pc.getFailedConvert())

@@ -157,7 +157,7 @@ class AssemblyConverter:
 
 	def __binary(self, x, size):
 		byte_num = m.ceil(size/8)
-		b_num = x.to_bytes(byte_num, byteorder = 'little', signed = True)
+		b_num = x.to_bytes(byte_num, byteorder = 'big', signed = True)
 
 		fin_bin = ''.join(format(byte, '08b') for byte in b_num)
 		
@@ -218,7 +218,7 @@ class AssemblyConverter:
 	def R_type(
 			self, instr, rs1, 
 			rs2):
-
+		print("instr: ", instr)
 		if instr not in self.R_instr:
 			raise WrongInstructionType()
 
@@ -228,17 +228,16 @@ class AssemblyConverter:
 			self.__reg_to_bin(rs2),
 			self.__reg_to_bin(rs1),
 			self.instr_data[instr][f3],
-			self.__reg_to_bin(0),
+			self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
 	def I_type(
 			self, instr, rs1, 
 			imm):
-
+		print("instr: ", instr)
 		if instr not in self.I_instr:
 			raise WrongInstructionType()
-
 		opcode = 0;f3 = 1;f7 = 2
 		mod_imm = int(imm) - ((int(imm)>>12)<<12) # imm[11:0]
 		return "".join([
@@ -246,14 +245,14 @@ class AssemblyConverter:
 			self.__binary(mod_imm,12),
 			self.__reg_to_bin(rs1),
 			self.instr_data[instr][f3],
-			self.__reg_to_bin(0),
+			self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
 	def S_type(
 			self, instr, rs1, 
 			rs2, imm):
-
+		print("instr: ", instr)
 		if instr not in self.S_instr:
 			raise WrongInstructionType()
 
@@ -274,7 +273,7 @@ class AssemblyConverter:
 	def SB_type(
 			self, instr, rs1, 
 			rs2, imm):
-
+		print("instr: ", instr)
 		if instr not in self.SB_instr:
 			raise WrongInstructionType()
 
@@ -306,7 +305,7 @@ class AssemblyConverter:
 	def U_type(
 			self, instr, 
 			imm):
-
+		print("instr: ", instr)
 		if instr not in self.U_instr:
 			raise WrongInstructionType()
 		opcode = 0;f3 = 1;f7 = 2
@@ -315,23 +314,27 @@ class AssemblyConverter:
 		return "".join([
 			#self.__binary(int(imm),32)[::-1][12:32][::-1],
 			self.__binary(mod_imm,20),
-			self.__reg_to_bin(0),
+			self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
 	def UJ_type(
 			self, instr, 
 			imm):
-
+		print("instr: ", instr)
 		if instr not in self.UJ_instr:
 			raise WrongInstructionType()
 
 		opcode = 0;f3 = 1;f7 = 2
-
+		print("imm: ", hex(imm))
 		mod_imm = ((int(imm) - ((int(imm) >> 20) << 20)) >> 19) << 19 # imm[20]
+		print("mod_imm: ", hex(mod_imm))
 		mod_imm += (int(imm) - ((int(imm) >> 10) << 10)) >> 1 # imm[20|10:1]
+		print("mod_imm: ", hex(mod_imm))
 		mod_imm += (int(imm) - ((int(imm) >> 11) << 11)) >> 10 # imm[20|10:1|11]
+		print("mod_imm: ", hex(mod_imm))
 		mod_imm += (int(imm) - ((int(imm) >> 19) << 19)) >> 12 # imm[20|10:1|11|19:12]
+		print("mod_imm: ", hex(mod_imm))
 		return  "".join([
 			#"".join([
 			#	self.__binary(int(imm),21)[::-1][20][::-1], self.__binary(int(imm),21)[::-1][1:11][::-1],
@@ -339,7 +342,7 @@ class AssemblyConverter:
 			#	self.__binary(int(imm),21)[::-1][12:20][::-1]
 			#]),		
 			self.__binary(mod_imm,20),
-			self.__reg_to_bin(0),
+			self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
@@ -444,35 +447,35 @@ class AssemblyConverter:
 
 		if clean[0] in self.R_instr:
 			res.append(self.R_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2])))
-			#print(res)
+			# print(res)
 		elif clean[0] in self.I_instr:
 			if clean[0] == "jalr":
 				if len(clean) == 4:
 					res.append(self.I_type(clean[0], self.__reg_map(clean[1]), self.calcJump(clean[2],i)))
 				else:
-					res.append(self.I_type(clean[0], "0", self.__reg_map("x1")))
+					res.append(self.I_type(clean[0], self.__reg_map("x1"), "0"))
 			elif clean[0] == "lw":
 				res.append(self.I_type(clean[0], self.__reg_map(clean[2]), clean[1]))
 			else:
 				res.append(self.I_type(clean[0], self.__reg_map(clean[1]), clean[2]))
-			#print(res)
+			# print(res)
 		elif clean[0] in self.S_instr:
 			res.append(self.S_type(clean[0], self.__reg_map(clean[3]), self.__reg_map(clean[1]), clean[2]))
-			#print(res)
+			# print(res)
 		elif clean[0] in self.SB_instr:
 			res.append(self.SB_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), self.calcJump(clean[3],i)))
-			#print(res)
+			# print(res)
 		elif clean[0] in self.U_instr:
 			res.append(self.U_type(clean[0], self.__reg_map(clean[1]), clean[2]))
-			#print(res)
+			# print(res)
 		elif clean[0] in self.UJ_instr:
 			if len(clean) == 3:
 				res.append(self.UJ_type(clean[0], self.calcJump(clean[2],i)))
 			else:
-				res.append(self.UJ_type(clean[0], self.calcJump(clean[1],i))
-			#print(res)
+				res.append(self.UJ_type(clean[0], self.calcJump(clean[1],i)))
+			# print(res)
 		elif clean[0] in self.pseudo_instr:
-			#print(clean[0]  + " pseudo")
+			# print(clean[0]  + " pseudo")
 
 			if clean[0] == "li": #need to consider larger than 12 bits
 				#res = self.I_type("addi",self.__reg_map(clean[1]), self.calcJump(clean[2],i), self.__reg_map(clean[1]))
@@ -499,6 +502,7 @@ class AssemblyConverter:
 				res.append(self.SB_type("blt", self.__reg_map(clean[2]), self.__reg_map(clean[1]), self.calcJump(clean[3],i)))
 			elif clean[0] == "ble":
 				res.append(self.SB_type("bge", self.__reg_map(clean[2]), self.__reg_map(clean[1]), self.calcJump(clean[3], i)))
+			# print(res)
 		else:
 			#debugging
 			print("Error: " + line)
