@@ -326,7 +326,7 @@ class AssemblyConverter:
 			raise WrongInstructionType()
 
 		opcode = 0;f3 = 1;f7 = 2
-		# print("imm: ", hex(imm))
+		print("imm: ", hex(imm))
 		# mod_imm = ((int(imm) - ((int(imm) >> 20) << 20)) >> 19) << 19 # imm[20]
 		# print("mod_imm: ", hex(mod_imm))
 		# mod_imm += (int(imm) - ((int(imm) >> 10) << 10)) >> 1 # imm[20|10:1]
@@ -446,8 +446,8 @@ class AssemblyConverter:
 		if not self.__valid_line(clean):
 			return [-1]
 
-		if clean[0] == "ecall":
-			return [-1]
+		# if clean[0] == "ecall":
+		# 	return [-1]
 
 		if clean[0] == "sw" or clean[0] == "lw" or clean[0] == "lb" or clean[0] == "lh" or clean[0] == "sb" or clean[0] == "sh":
 			#sw s0, 0(sp)
@@ -466,6 +466,8 @@ class AssemblyConverter:
 					res.append(self.I_type(clean[0], self.__reg_map("x1"), "0"))
 			elif clean[0] == "lw":
 				res.append(self.I_type(clean[0], self.__reg_map(clean[2]), clean[1]))
+			elif clean[0] == "ecall":
+				res.append(self.I_type(clean[0], self.__reg_map("x0"),"0"))
 			else:
 				res.append(self.I_type(clean[0], self.__reg_map(clean[1]), clean[2]))
 			# print(res)
@@ -526,6 +528,19 @@ class AssemblyConverter:
 					raise WrongInstructionSize(len(r))
 
 		#return instruction
+		# print("res: ", type(res[0]))
+		# print("res, ", res)
+		# byte_num = 8
+		# prefix = 0x00000000
+		# print("prefix: ", prefix)
+		# prefix = prefix.to_bytes(byte_num, byteorder = 'big', signed = True)
+		
+		# prefix = '{0:32b}'.format(prefix)
+		# print("str(prefix): ", str(prefix))
+		# print("bin(int(prefix)): ", format(prefix,8))
+		# res = prefix + str(bin(int(prefix,8)))
+		# res[0] = "0000000" + res[0]
+		print("res: ", res)
 		return res
 
 	#AFTER READING FILE	
@@ -551,6 +566,8 @@ class AssemblyConverter:
 				for elem in self.instructions:
 					#split into bytes
 					byte_array = [elem[i:i+8] for i in range(0,len(elem),8)]
+					byte_array.reverse()
+					print("byte_array: ", byte_array)
 					byte_list = [int(b,2) for b in byte_array]
 
 					f.write(bytearray(byte_list))
@@ -592,7 +609,16 @@ class AssemblyConverter:
 		self.filename = filename
 		self.code = self.__read_in_advance()
 		self.instructions = self.__get_instructions()
+		print("instructions:", type(self.instructions[0]))
 
+		for i in range(len(self.instructions)):
+			self.instructions[i] = "00000000" + self.instructions[i]
+			self.instructions[i] = "00000000" + self.instructions[i]
+			self.instructions[i] = "00000000" + self.instructions[i]
+			self.instructions[i] = "00000000" + self.instructions[i]
+			# print("instruction: ", instruction)
+			
+		print("instructions:", self.instructions[0])
 		if self.hexMode:
 			for i in range(len(self.instructions)):
 				self.instructions[i] = self.hex(self.instructions[i])
