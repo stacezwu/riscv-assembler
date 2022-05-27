@@ -36,6 +36,19 @@ class WrongInstructionType( Exception ):
 		self.message = message
 		super().__init__(self.message)
 
+class RegisterMap(dict):
+   def __init__(self,*arg,**kw):
+      super(RegisterMap, self).__init__(*arg, **kw)
+
+   def __getitem__(self, elem):
+	   if elem[0] == '[' and elem[-1] == ']':
+		   dest_num = int(elem[1:-1])
+		   assert dest_num <= 2**23, "source operand distance too large"
+		   return dest_num
+	   else:
+		   return super().get(elem)
+
+
 #-----------------------------------------------------------------------------------------		
 #-----------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------
@@ -359,7 +372,7 @@ class AssemblyConverter:
 		#register mapping
 		#make dictionary
 		rmap_path = Path(__file__).parent / "data/reg_map.dat"	
-		r_p = {}
+		r_p = RegisterMap()
 		
 		f = open(rmap_path,"r")
 		#f = open("riscinterpreter/data/reg_map.dat", "r")
@@ -373,6 +386,11 @@ class AssemblyConverter:
 			line = f.readline()
 
 		f.close()
+
+		#STRAIGHT destination registers
+
+
+
 		#index for instr_data
 		opcode = 0
 		f3 = 1
