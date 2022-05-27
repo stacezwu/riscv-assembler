@@ -326,20 +326,15 @@ class AssemblyConverter:
 			raise WrongInstructionType()
 
 		opcode = 0;f3 = 1;f7 = 2
-		print("imm: ", hex(imm))
 		# mod_imm = ((int(imm) - ((int(imm) >> 20) << 20)) >> 19) << 19 # imm[20]
-		# print("mod_imm: ", hex(mod_imm))
 		# mod_imm += (int(imm) - ((int(imm) >> 10) << 10)) >> 1 # imm[20|10:1]
-		# print("mod_imm: ", hex(mod_imm))
 		# mod_imm += (int(imm) - ((int(imm) >> 11) << 11)) >> 10 # imm[20|10:1|11]
-		# print("mod_imm: ", hex(mod_imm))
 		# mod_imm += (int(imm) - ((int(imm) >> 19) << 19)) >> 12 # imm[20|10:1|11|19:12]
-		# print("mod_imm: ", hex(mod_imm))
 
-		mod_imm = (int(imm) >> 20 & 0x1) << 19
-		mod_imm += (int(imm) >> 1 & 0x3FF) << 9
-		mod_imm += (int(imm) >> 11 & 0x1) << 8
-		mod_imm += (int(imm) >> 12 & 0xFF) << 0
+		mod_imm = (int(imm) >> 19 & 0x1) << 19
+		mod_imm += (int(imm) >> 0 & 0x3FF) << 9
+		mod_imm += (int(imm) >> 10 & 0x1) << 8
+		mod_imm += (int(imm) >> 11 & 0xFF) << 0
 		print("new mod_imm: ", hex(mod_imm))
 
 
@@ -461,7 +456,8 @@ class AssemblyConverter:
 		elif clean[0] in self.I_instr:
 			if clean[0] == "jalr":
 				if len(clean) == 4:
-					res.append(self.I_type(clean[0], self.__reg_map(clean[1]), self.calcJump(clean[2],i)))
+					# res.append(self.I_type(clean[0], self.__reg_map(clean[1]), self.calcJump(clean[2],i)))
+					res.append(self.I_type(clean[0], self.__reg_map(clean[1]), int(clean[2])))
 				else:
 					res.append(self.I_type(clean[0], self.__reg_map("x1"), "0"))
 			elif clean[0] == "lw":
@@ -475,16 +471,19 @@ class AssemblyConverter:
 			res.append(self.S_type(clean[0], self.__reg_map(clean[3]), self.__reg_map(clean[1]), clean[2]))
 			# print(res)
 		elif clean[0] in self.SB_instr:
-			res.append(self.SB_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), self.calcJump(clean[3],i)))
+			# res.append(self.SB_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), self.calcJump(clean[3],i)))
+			res.append(self.SB_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), int(clean[3])))
 			# print(res)
 		elif clean[0] in self.U_instr:
 			res.append(self.U_type(clean[0], self.__reg_map(clean[1]), clean[2]))
 			# print(res)
 		elif clean[0] in self.UJ_instr:
 			if len(clean) == 3:
-				res.append(self.UJ_type(clean[0], self.calcJump(clean[2],i)))
+				# res.append(self.UJ_type(clean[0], self.calcJump(clean[2],i)))
+				res.append(self.UJ_type(clean[0], int(clean[2])))
 			else:
-				res.append(self.UJ_type(clean[0], self.calcJump(clean[1],i)))
+				res.append(self.UJ_type(clean[0], int(clean[1])))
+				# res.append(self.UJ_type(clean[0], self.calcJump(clean[1],i)))
 			# print(res)
 		elif clean[0] in self.pseudo_instr:
 			# print(clean[0]  + " pseudo")
@@ -503,17 +502,21 @@ class AssemblyConverter:
 			elif clean[0] == "neg":
 				res.append(self.R_type("sub", self.__reg_map("x0"), self.__reg_map(clean[1])))
 			elif clean[0] == "la":
-				res.append(self.U_type("auipc", self.calcJump(clean[1],i)))
+				# res.append(self.U_type("auipc", self.calcJump(clean[1],i)))
+				res.append(self.U_type("auipc", int(clean[1])))
 			elif clean[0] == "j":
-				res.append(self.UJ_type("jal", self.calcJump(clean[1],i)))
+				# res.append(self.UJ_type("jal", self.calcJump(clean[1],i)))
+				res.append(self.UJ_type("jal", int(clean[1])))
 			elif clean[0] == "jr":
 				res.append(self.I_type("jalr", self.__reg_map(clean[1]), "0"))
 			elif clean[0] == "ret":
 				res.append(self.I_type("jalr", self.__reg_map("x1"), "0"))
 			elif clean[0] == "bgt":
-				res.append(self.SB_type("blt", self.__reg_map(clean[2]), self.__reg_map(clean[1]), self.calcJump(clean[3],i)))
+				# res.append(self.SB_type("blt", self.__reg_map(clean[2]), self.__reg_map(clean[1]), self.calcJump(clean[3],i)))
+				res.append(self.SB_type("blt", self.__reg_map(clean[2]), self.__reg_map(clean[1]), int(clean[3])))
 			elif clean[0] == "ble":
-				res.append(self.SB_type("bge", self.__reg_map(clean[2]), self.__reg_map(clean[1]), self.calcJump(clean[3], i)))
+				# res.append(self.SB_type("bge", self.__reg_map(clean[2]), self.__reg_map(clean[1]), self.calcJump(clean[3], i)))
+				res.append(self.SB_type("bge", self.__reg_map(clean[2]), self.__reg_map(clean[1]), int(clean[3])))
 			# print(res)
 		else:
 			#debugging

@@ -2,4 +2,5 @@ old.md
 riscv_assembler/prjtest.pybuild
 dist
 build
-
+riscv_assembler.egg-info/
+riscv_assembler/__pycache__/
