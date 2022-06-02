@@ -279,10 +279,15 @@ class AssemblyConverter:
 
 		opcode = 0;f3 = 1;f7 = 2
 
-		mod_imm = (int(imm) - ((int(imm) >> 12) << 12)) >> 6 # imm[12]
-		mod_imm += (int(imm) - ((int(imm) >> 11) >> 11)) >> 5 # imm[12|10:5]
-		mod_imm_2 = (int(imm) - ((int(imm) >> 5) << 5)) # imm[4:1]
-		mod_imm_2 += (int(imm) - ((int(imm) >> 11) << 11)) >> 10 # imm[4:1|11]
+		# mod_imm = (int(imm) - ((int(imm) >> 12) << 12)) >> 6 # imm[12]
+		# mod_imm += (int(imm) - ((int(imm) >> 11) >> 11)) >> 5 # imm[12|10:5]
+		# mod_imm_2 = (int(imm) - ((int(imm) >> 5) << 5)) # imm[4:1]
+		# mod_imm_2 += (int(imm) - ((int(imm) >> 11) << 11)) >> 10 # imm[4:1|11]
+
+		mod_imm = (int(imm) >> 11 & 0x1) << 6
+		mod_imm += (int(imm) >> 4 & 0x3F) << 0
+		mod_imm_2 = (int(imm) >> 0 & 0xF) << 1
+		mod_imm_2 += (int(imm) >> 10 & 0x1) << 0
 
 		return "".join([
 			#"".join([
