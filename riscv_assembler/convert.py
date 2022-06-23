@@ -36,6 +36,18 @@ class WrongInstructionType( Exception ):
 		self.message = message
 		super().__init__(self.message)
 
+class RegisterMap(dict):
+   def __init__(self,*arg,**kw):
+      super(RegisterMap, self).__init__(*arg, **kw)
+
+   def __getitem__(self, elem):
+	   if elem[0] == '[' and elem[-1] == ']':
+		   dest_num = int(elem[1:-1])
+		   assert dest_num <= 2**23, "source operand distance too large"
+		   return dest_num
+	   else:
+		   return super().get(elem)
+
 #-----------------------------------------------------------------------------------------		
 #-----------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------
@@ -144,7 +156,9 @@ class AssemblyConverter:
 		return self.r_map[x]
 
 	def __reg_to_bin(self,x):
-		return self.__binary(int(x[1::]), 5)
+		if type(x) == str:
+			x = int(x[1::])
+		return self.__binary(x, 10)
 
 	#for jumps, calculates hex address of func
 	def calcJump(self, x,line_num):
@@ -223,12 +237,24 @@ class AssemblyConverter:
 			raise WrongInstructionType()
 
 		opcode = 0;f3 = 1;f7 = 2
-		return "".join([
+		print(rs2, rs1)
+		print(self.__reg_to_bin(rs2)[0:5],
+			self.__reg_to_bin(rs1)[0:5],
 			self.instr_data[instr][f7],
-			self.__reg_to_bin(rs2),
-			self.__reg_to_bin(rs1),
+			self.__reg_to_bin(rs2)[-5:10],
+			self.__reg_to_bin(rs1)[-5:10],
 			self.instr_data[instr][f3],
-			self.__reg_to_bin("x0"),
+			5*"0", # self.__reg_to_bin("x0"),
+			self.instr_data[instr][opcode])
+
+		return "".join([
+			self.__reg_to_bin(rs2)[0:5],
+			self.__reg_to_bin(rs1)[0:5],
+			self.instr_data[instr][f7],
+			self.__reg_to_bin(rs2)[-5:10],
+			self.__reg_to_bin(rs1)[-5:10],
+			self.instr_data[instr][f3],
+			5*"0", # self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
@@ -240,12 +266,22 @@ class AssemblyConverter:
 			raise WrongInstructionType()
 		opcode = 0;f3 = 1;f7 = 2
 		mod_imm = int(imm) - ((int(imm)>>12)<<12) # imm[11:0]
+		print(rs1)
+		print(			'00000',
+			self.__reg_to_bin(rs1)[0:5],
+			self.__binary(mod_imm,12),
+			self.__reg_to_bin(rs1)[-5:10],
+			self.instr_data[instr][f3],
+			5*"0", # self.__reg_to_bin("x0"),
+			self.instr_data[instr][opcode])
 		return "".join([
 			#self.__binary(int(imm),12),
+			'00000',
+			self.__reg_to_bin(rs1)[0:5],
 			self.__binary(mod_imm,12),
-			self.__reg_to_bin(rs1),
+			self.__reg_to_bin(rs1)[-5:10],
 			self.instr_data[instr][f3],
-			self.__reg_to_bin("x0"),
+			5*"0", # self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
@@ -259,11 +295,27 @@ class AssemblyConverter:
 		opcode = 0;f3 = 1;f7 = 2
 		mod_imm = (int(imm) - ((int(imm) >> 12) << 12)) >> 5 # imm[11:5]
 		mod_imm_2 = int(imm) - ((int(imm) >> 5) << 5) # imm[4:0]
+	
+
+		print(rs2, rs1)
+		print(			#self.__binary(int(imm),12)[::-1][5:12][::-1],
+			self.__reg_to_bin(rs2)[0:5],
+			self.__reg_to_bin(rs1)[0:5],
+			self.__binary(mod_imm, 7), # imm[11:5]
+			self.__reg_to_bin(rs2)[-5:10],
+			self.__reg_to_bin(rs1)[-5:10],
+			self.instr_data[instr][f3],
+			#self.__binary(int(imm),12)[::-1][0:5][::-1],
+			self.__binary(mod_imm_2, 5), # imm[4:0]
+			self.instr_data[instr][opcode]
+			)
 		return "".join([
 			#self.__binary(int(imm),12)[::-1][5:12][::-1],
+			self.__reg_to_bin(rs2)[0:5],
+			self.__reg_to_bin(rs1)[0:5],
 			self.__binary(mod_imm, 7), # imm[11:5]
-			self.__reg_to_bin(rs2),
-			self.__reg_to_bin(rs1),
+			self.__reg_to_bin(rs2)[-5:10],
+			self.__reg_to_bin(rs1)[-5:10],
 			self.instr_data[instr][f3],
 			#self.__binary(int(imm),12)[::-1][0:5][::-1],
 			self.__binary(mod_imm_2, 5), # imm[4:0]
@@ -289,14 +341,30 @@ class AssemblyConverter:
 		mod_imm_2 = (int(imm) >> 0 & 0xF) << 1
 		mod_imm_2 += (int(imm) >> 10 & 0x1) << 0
 
+		print(rs2, rs1)
+		print(			self.__reg_to_bin(rs2)[0:5],
+			self.__reg_to_bin(rs1)[0:5],
+			self.__binary(mod_imm,7),
+			self.__reg_to_bin(rs2)[-5:10],
+			self.__reg_to_bin(rs1)[-5:10],
+			self.instr_data[instr][f3],
+			self.__binary(mod_imm_2,5),
+			#"".join([
+			#	self.__binary(int(imm),13)[::-1][1:5][::-1],
+			#	self.__binary(int(imm),13)[::-1][11][::-1]
+			#]),
+			self.instr_data[instr][opcode])
+
 		return "".join([
 			#"".join([
 			#	self.__binary(int(imm),13)[::-1][12][::-1],
 			#	self.__binary(int(imm),13)[::-1][5:11][::-1]
 			#]),
+			self.__reg_to_bin(rs2)[0:5],
+			self.__reg_to_bin(rs1)[0:5],
 			self.__binary(mod_imm,7),
-			self.__reg_to_bin(rs2),
-			self.__reg_to_bin(rs1),
+			self.__reg_to_bin(rs2)[-5:10],
+			self.__reg_to_bin(rs1)[-5:10],
 			self.instr_data[instr][f3],
 			self.__binary(mod_imm_2,5),
 			#"".join([
@@ -315,11 +383,19 @@ class AssemblyConverter:
 			raise WrongInstructionType()
 		opcode = 0;f3 = 1;f7 = 2
 
-		mod_imm = (int(imm) >> 12)
-		return "".join([
+		mod_imm = (int(imm))
+		print(			'00000',
+			'00000',
 			#self.__binary(int(imm),32)[::-1][12:32][::-1],
 			self.__binary(mod_imm,20),
-			self.__reg_to_bin("x0"),
+			5*"0", # self.__reg_to_bin("x0"),
+			self.instr_data[instr][opcode])
+		return "".join([
+			'00000',
+			'00000',
+			#self.__binary(int(imm),32)[::-1][12:32][::-1],
+			self.__binary(mod_imm,20),
+			5*"0", # self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
@@ -342,7 +418,11 @@ class AssemblyConverter:
 		mod_imm += (int(imm) >> 11 & 0xFF) << 0
 		print("new mod_imm: ", hex(mod_imm))
 
-
+		print(			'00000',
+			'00000',	
+			self.__binary(mod_imm,20),
+			5*"0", # self.__reg_to_bin("x0"),
+			self.instr_data[instr][opcode])
 		# mod_imm = (int(imm) >> 20) << 20
 		# mod_imm += ((int(imm) - ((int(imm) >> 11) << 11)) >> 1) << 10
 		return  "".join([
@@ -350,9 +430,11 @@ class AssemblyConverter:
 			#	self.__binary(int(imm),21)[::-1][20][::-1], self.__binary(int(imm),21)[::-1][1:11][::-1],
 			#	self.__binary(int(imm),21)[::-1][11][::-1],
 			#	self.__binary(int(imm),21)[::-1][12:20][::-1]
-			#]),		
+			#]),	
+			'00000',
+			'00000',	
 			self.__binary(mod_imm,20),
-			self.__reg_to_bin("x0"),
+			5*"0", # self.__reg_to_bin("x0"),
 			self.instr_data[instr][opcode]
 		])
 
@@ -364,7 +446,8 @@ class AssemblyConverter:
 		#register mapping
 		#make dictionary
 		rmap_path = Path(__file__).parent / "data/reg_map.dat"	
-		r_p = {}
+		# r_p = {}
+		r_p = RegisterMap()
 		
 		f = open(rmap_path,"r")
 		#f = open("riscinterpreter/data/reg_map.dat", "r")
@@ -449,38 +532,39 @@ class AssemblyConverter:
 		# if clean[0] == "ecall":
 		# 	return [-1]
 
-		if clean[0] == "sw" or clean[0] == "lw" or clean[0] == "lb" or clean[0] == "lh" or clean[0] == "sb" or clean[0] == "sh":
-			#sw s0, 0(sp)
-			w_spl = clean[2].split("(")
-			clean[2] = w_spl[0]
-			clean.append(w_spl[1].replace(")",""))
+		# STACEY: not sure seems not needed
+		# if clean[0] == "sw" or clean[0] == "lw" or clean[0] == "lb" or clean[0] == "lh" or clean[0] == "sb" or clean[0] == "sh":
+		# 	#sw s0, 0(sp)
+		# 	w_spl = clean[2].split("(")
+		# 	clean[2] = w_spl[0]
+		# 	clean.append(w_spl[1].replace(")",""))
 
 		if clean[0] in self.R_instr:
 			res.append(self.R_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2])))
 			# print(res)
 		elif clean[0] in self.I_instr:
 			if clean[0] == "jalr":
-				if len(clean) == 4:
+				if len(clean) == 3:
 					# res.append(self.I_type(clean[0], self.__reg_map(clean[1]), self.calcJump(clean[2],i)))
 					res.append(self.I_type(clean[0], self.__reg_map(clean[1]), int(clean[2])))
 				else:
-					res.append(self.I_type(clean[0], self.__reg_map("x1"), "0"))
+					res.append(self.I_type(clean[0], self.__reg_map(clean[1]), "0"))
 			elif clean[0] == "lw":
-				res.append(self.I_type(clean[0], self.__reg_map(clean[2]), clean[1]))
+				res.append(self.I_type(clean[0], self.__reg_map(clean[1]), clean[2]))
 			elif clean[0] == "ecall":
 				res.append(self.I_type(clean[0], self.__reg_map("x0"),"0"))
 			else:
 				res.append(self.I_type(clean[0], self.__reg_map(clean[1]), clean[2]))
 			# print(res)
 		elif clean[0] in self.S_instr:
-			res.append(self.S_type(clean[0], self.__reg_map(clean[3]), self.__reg_map(clean[1]), clean[2]))
+			res.append(self.S_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), int(clean[3])))
 			# print(res)
 		elif clean[0] in self.SB_instr:
 			# res.append(self.SB_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), self.calcJump(clean[3],i)))
 			res.append(self.SB_type(clean[0], self.__reg_map(clean[1]), self.__reg_map(clean[2]), int(clean[3])))
 			# print(res)
 		elif clean[0] in self.U_instr:
-			res.append(self.U_type(clean[0], self.__reg_map(clean[1]), clean[2]))
+			res.append(self.U_type(clean[0], clean[1]))
 			# print(res)
 		elif clean[0] in self.UJ_instr:
 			if len(clean) == 3:
@@ -622,8 +706,8 @@ class AssemblyConverter:
 		for i in range(len(self.instructions)):
 			self.instructions[i] = "00000000" + self.instructions[i]
 			self.instructions[i] = "00000000" + self.instructions[i]
-			self.instructions[i] = "00000000" + self.instructions[i]
-			self.instructions[i] = "00000000" + self.instructions[i]
+			self.instructions[i] = "000000" + self.instructions[i]
+			# self.instructions[i] = "00000000" + self.instructions[i]
 			# print("instruction: ", instruction)
 			
 		print("instructions:", self.instructions[0])

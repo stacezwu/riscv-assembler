@@ -16,7 +16,7 @@ os.system("rm -rf a")
 # print(res)
 
 cnv = AssemblyConverter()
-res = cnv.convert("tests/assembly/straight/loop.s")
+res = cnv.convert("tests/assembly/straight/extend.s")
 print(res)
 
 print("\n".join(["{}: {}".format(p, len(res[p])) for p in res.keys()]))
